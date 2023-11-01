@@ -8,11 +8,17 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 
@@ -22,7 +28,6 @@ import java.util.List;
 @Validated
 public class ChatMessageController {
     private final ChatMessageService chatMessageService;
-    private final SimpMessagingTemplate messagingTemplate;
 
     @GetMapping("/room/{roomId}")
     public String showRoom(
@@ -40,15 +45,13 @@ public class ChatMessageController {
     public record WriteMessageResponseBody(long id) {
     }
 
-    @PostMapping("/room/{roomId}/message")
-    @ResponseBody
+    @MessageMapping("/chat/room/{roomId}/message")
+    @SendTo("/topic/chat/room/{roomId}/messages")
     public RsData<WriteMessageResponseBody> writeMessage(
-            @PathVariable final long roomId,
-            @Valid @RequestBody final WriteMessageRequestBody requestBody
+            @DestinationVariable final long roomId,
+            @Valid @Payload final WriteMessageRequestBody requestBody
     ) {
         RsData<ChatMessage> writeRs = chatMessageService.write(roomId, requestBody.writerName, requestBody.body);
-
-        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId + "/messages", writeRs);
 
         return writeRs.newDataOf(new WriteMessageResponseBody(writeRs.getData().getId()));
     }

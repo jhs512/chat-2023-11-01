@@ -72,11 +72,10 @@
             return;
         }
 
-        fetchPost(`/chat/room/${roomId}/message`, {
+        stompClient.send(`/app/chat/room/${roomId}/message`, {}, JSON.stringify({
             writerName: form.writerName.value,
             body: form.body.value
-        })
-            .then(console.log);
+        }));
 
         form.body.value = '';
         form.body.focus();
