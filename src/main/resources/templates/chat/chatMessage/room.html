@@ -1,9 +1,13 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.4.0/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
 <div class="chat">
     <form class="chat__write-message" onsubmit="Chat__writeMessage(this); return false;">
         <input type="text" placeholder="작성자" name="writerName">
         <input type="text" placeholder="내용을 입력해주세요." name="body">
         <input type="submit" value="작성">
     </form>
+
     <div class="chat__message-box">
         <ul class="chat__message-ul">
 
@@ -44,6 +48,10 @@
 
 <script th:inline="javascript">
     const roomId = /*[[${roomId}]]*/ 0;
+
+    function sendMessage() {
+        stompClient.send("/app/chat", {}, JSON.stringify({'content': 'Hello, world!'}));
+    }
 
     // 채팅 메세지 작성 시작
     function Chat__writeMessage(form) {
@@ -103,12 +111,20 @@
                     `<li>${message.writerName} : ${message.body}</li>`
                 );
         });
-
-        //Chat__loadMore(); // 즉시 실행
-        setTimeout(Chat__loadMore, 500); // 지금은 아니고 0.5 초 후에 실행해라
     }
 
     Chat__loadMore();
+
+    const socket = new SockJS('/ws');
+    const stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function (frame) {
+        console.log('Connected: ' + frame);
+
+        stompClient.subscribe(`/topic/chat/room/${roomId}/messages`, function (data) {
+            Chat__loadMore();
+        });
+    });
 
     // 채팅 메시지들 읽기 끝
 </script>

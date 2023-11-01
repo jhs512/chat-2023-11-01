@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -21,6 +22,7 @@ import java.util.List;
 @Validated
 public class ChatMessageController {
     private final ChatMessageService chatMessageService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @GetMapping("/room/{roomId}")
     public String showRoom(
@@ -45,6 +47,8 @@ public class ChatMessageController {
             @Valid @RequestBody final WriteMessageRequestBody requestBody
     ) {
         RsData<ChatMessage> writeRs = chatMessageService.write(roomId, requestBody.writerName, requestBody.body);
+
+        messagingTemplate.convertAndSend("/topic/chat/room/" + roomId + "/messages", writeRs);
 
         return writeRs.newDataOf(new WriteMessageResponseBody(writeRs.getData().getId()));
     }
