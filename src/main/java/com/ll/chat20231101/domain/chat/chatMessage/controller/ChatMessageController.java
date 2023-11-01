@@ -42,7 +42,13 @@ public class ChatMessageController {
     public record WriteMessageRequestBody(@NotBlank String writerName, @NotBlank String body) {
     }
 
-    public record WriteMessageResponseBody(long id) {
+    @Getter
+    public static class WriteMessageResponseBody {
+        private final ChatMessageDto message;
+
+        public WriteMessageResponseBody(ChatMessage message) {
+            this.message = new ChatMessageDto(message);
+        }
     }
 
     @MessageMapping("/chat/room/{roomId}/message")
@@ -53,7 +59,7 @@ public class ChatMessageController {
     ) {
         RsData<ChatMessage> writeRs = chatMessageService.write(roomId, requestBody.writerName, requestBody.body);
 
-        return writeRs.newDataOf(new WriteMessageResponseBody(writeRs.getData().getId()));
+        return writeRs.newDataOf(new WriteMessageResponseBody(writeRs.getData()));
     }
 
     @Getter

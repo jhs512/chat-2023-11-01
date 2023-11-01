@@ -49,10 +49,6 @@
 <script th:inline="javascript">
     const roomId = /*[[${roomId}]]*/ 0;
 
-    function sendMessage() {
-        stompClient.send("/app/chat", {}, JSON.stringify({'content': 'Hello, world!'}));
-    }
-
     // 채팅 메세지 작성 시작
     function Chat__writeMessage(form) {
         form.writerName.value = form.writerName.value.trim();
@@ -98,18 +94,19 @@
     const Chat__elMessageUl = document.querySelector('.chat__message-ul');
 
     function Chat__drawMessages(messages) {
-        if (messages.length > 0) {
-            // 메세지를 그리기 전에 Chat__lastLoadedUuid 변수를 갱신합니다.
-            Chat__lastLoadedId = messages[messages.length - 1].id;
-        }
-
         messages.forEach((message) => {
-            Chat__elMessageUl
-                .insertAdjacentHTML(
-                    "afterBegin",
-                    `<li>${message.writerName} : ${message.body}</li>`
-                );
+            Chat__drawMessage(message);
         });
+    }
+
+    function Chat__drawMessage(message) {
+        Chat__lastLoadedId = message.id;
+
+        Chat__elMessageUl
+            .insertAdjacentHTML(
+                "afterBegin",
+                `<li>${message.writerName} : ${message.body}</li>`
+            );
     }
 
     Chat__loadMore();
@@ -121,7 +118,8 @@
         console.log('Connected: ' + frame);
 
         stompClient.subscribe(`/topic/chat/room/${roomId}/messages`, function (data) {
-            Chat__loadMore();
+            const jsonData = JSON.parse(data.body);
+            Chat__drawMessage(jsonData.data.message);
         });
     });
 
